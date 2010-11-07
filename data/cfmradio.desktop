@@ -1,0 +1,9 @@
+[Desktop Entry]
+Encoding=UTF-8
+Version=1.0
+Type=Application
+Name=Radio
+Exec=/usr/bin/cfmradio
+Icon=cfmradio
+X-Osso-Service=com.javispedro.cfmradio
+X-Osso-Type=application/x-executable

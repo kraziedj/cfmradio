@@ -1,0 +1,3 @@
+[D-BUS Service]
+Name=com.javispedro.cfmradio
+Exec=/usr/bin/cfmradio
