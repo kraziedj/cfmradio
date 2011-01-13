@@ -85,9 +85,10 @@ static void cfm_radio_tuner_power(CFmRadio *self, gboolean enable)
 
 	if (priv->fd == -1) return;
 
-    vctrl.id = V4L2_CID_AUDIO_MUTE;
-    vctrl.value = enable ? 0 : 1;
-    res = ioctl(priv->fd, VIDIOC_S_CTRL, &vctrl);
+	vctrl.id = V4L2_CID_AUDIO_MUTE;
+	vctrl.value = enable ? 0 : 1;
+	res = ioctl(priv->fd, VIDIOC_S_CTRL, &vctrl);
+
 	if (res < 0) {
 		perror("VIDIOC_S_CTRL");
 	}
@@ -213,10 +214,10 @@ static void cfm_radio_init_tuner(CFmRadio *self, const gchar * device)
 
 	if (priv->precise_tuner) {
 		priv->range_low = tuner.rangelow * 62.5f;
-        priv->range_high = tuner.rangehigh * 62.5f;
+		priv->range_high = tuner.rangehigh * 62.5f;
 	} else {
 		priv->range_low = tuner.rangelow * 62500;
-        priv->range_high = tuner.rangehigh * 62500;
+		priv->range_high = tuner.rangehigh * 62500;
 	}
 
 	g_debug("Tuner detected (from %lu to %lu)\n", priv->range_low, priv->range_high);
