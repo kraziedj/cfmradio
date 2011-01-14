@@ -31,7 +31,9 @@ struct _CFmRadioClass
 
 GType cfm_radio_get_type (void);
 CFmRadio* cfm_radio_new();
-void cfm_radio_free(CFmRadio* radio);
+
+void cfm_radio_seek_up(CFmRadio* radio);
+void cfm_radio_seek_down(CFmRadio* radio);
 
 #endif /* __CFM_RADIO_H__ */
 

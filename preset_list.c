@@ -2,10 +2,11 @@
  * GPL 2
  */
 
-#include <gtk/gtk.h>
 #include <hildon/hildon.h>
+#include <glib/gi18n.h>
 
 #include "presets.h"
+#include "preset_renderer.h"
 #include "preset_list.h"
 
 G_DEFINE_TYPE(CFmPresetList, cfm_preset_list, HILDON_TYPE_STACKABLE_WINDOW);
@@ -18,6 +19,7 @@ G_DEFINE_TYPE(CFmPresetList, cfm_preset_list, HILDON_TYPE_STACKABLE_WINDOW);
 struct _CFmPresetListPrivate {
 	HildonTouchSelector *sel;
 	HildonTouchSelectorColumn *col;
+	GtkCellRenderer *renderer;
 };
 
 enum {
@@ -83,6 +85,21 @@ static void cfm_preset_list_get_property(GObject *object, guint property_id,
 	}
 }
 
+static void cfm_preset_list_dispose(GObject *object)
+{
+	CFmPresetList *self = CFM_PRESET_LIST(object);
+	CFmPresetListPrivate *priv = self->priv;
+
+	if (priv->sel) g_object_unref(priv->sel);
+	priv->sel = NULL;
+	/* Col is owned by sel */
+	priv->col = NULL;
+	if (priv->renderer) g_object_unref(priv->renderer);
+	priv->renderer = NULL;
+
+	G_OBJECT_CLASS(cfm_preset_list_parent_class)->dispose(object);
+}
+
 static void cfm_preset_list_init(CFmPresetList *self)
 {
 	CFmPresetListPrivate *priv;
@@ -92,13 +109,16 @@ static void cfm_preset_list_init(CFmPresetList *self)
 	/* Empty model for now */
 	GtkTreeModel *model = GTK_TREE_MODEL(gtk_list_store_new(2, G_TYPE_FLOAT, G_TYPE_STRING));
 
-	gtk_window_set_title(GTK_WINDOW(self), "Presets");
+	gtk_window_set_title(GTK_WINDOW(self), _("Presets"));
 	hildon_gtk_window_set_portrait_flags(GTK_WINDOW(self),
 		HILDON_PORTRAIT_MODE_SUPPORT);
 
 	priv->sel = HILDON_TOUCH_SELECTOR(hildon_touch_selector_new());
-	priv->col = hildon_touch_selector_append_text_column(priv->sel, model, FALSE);
-	hildon_touch_selector_column_set_text_column(priv->col, 1);
+	priv->renderer = cfm_preset_renderer_new();
+	g_object_set(G_OBJECT(priv->renderer), "xpad", HILDON_MARGIN_DEFAULT, NULL);
+	priv->col = hildon_touch_selector_append_column(priv->sel, model,
+		priv->renderer, "frequency", 0, "name", 1);
+	hildon_touch_selector_column_set_text_column(priv->col, 0);
 
 	gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(priv->sel));
 
@@ -115,6 +135,7 @@ static void cfm_preset_list_class_init(CFmPresetListClass *klass)
 
 	gobject_class->set_property = cfm_preset_list_set_property;
 	gobject_class->get_property = cfm_preset_list_get_property;
+	gobject_class->dispose = cfm_preset_list_dispose;
 
 	g_type_class_add_private(klass, sizeof(CFmPresetListPrivate));
 

@@ -1,0 +1,45 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: CFmRadio\n"
+"Report-Msgid-Bugs-To: maemo@javispedro.com\n"
+"POT-Creation-Date: 2011-01-14 20:52+0100\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: cfmradio.c:248
+msgid "Radio"
+msgstr ""
+
+#: cfmradio.c:255
+msgid "Presets…"
+msgstr ""
+
+#: cfmradio.c:259
+msgid "Scan for presets"
+msgstr ""
+
+#: cfmradio.c:263
+msgid "Stop scanning"
+msgstr ""
+
+#: cfmradio.c:267
+msgid "Set preset"
+msgstr ""
+
+#: cfmradio.c:271
+msgid "Remove preset"
+msgstr ""
+
+#: preset_list.c:112
+msgid "Presets"
+msgstr ""

@@ -149,7 +149,6 @@ static void cfm_presets_get_property(GObject *object, guint property_id,
 	CFmPresets *self = CFM_PRESETS(object);
 	switch (property_id) {
 	case PROP_NAME:
-		g_debug("Prop name is now set\n");
 		g_value_set_string(value, self->priv->name);
 		break;
 	default:

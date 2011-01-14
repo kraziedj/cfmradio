@@ -94,6 +94,18 @@ static void cfm_radio_tuner_power(CFmRadio *self, gboolean enable)
 	}
 }
 
+static void cfm_radio_tuner_hw_seek(CFmRadio *self, gboolean upward)
+{
+	CFmRadioPrivate *priv = self->priv;
+	struct v4l2_hw_freq_seek t_freq_seek = { 0 };
+	g_return_if_fail(priv->fd != -1);
+	t_freq_seek.tuner = 0;
+	t_freq_seek.type = V4L2_TUNER_RADIO;
+	t_freq_seek.seek_upward = upward;
+	int res = ioctl(priv->fd, VIDIOC_S_HW_FREQ_SEEK, &t_freq_seek);
+	g_warn_if_fail(res == 0);
+}
+
 static void cfm_radio_mixer_set_enum_value(CFmRadio *self, const char * name, const char * value)
 {
 	CFmRadioPrivate *priv = self->priv;
@@ -302,6 +314,8 @@ static void cfm_radio_si_request(pa_stream *p, size_t nbytes, void *userdata)
 {
 	CFmRadio *self = CFM_RADIO(userdata);
 	CFmRadioPrivate *priv = self->priv;
+
+	g_return_if_fail(priv->si || priv->so);
 
 	if (nbytes < MIN_BUFFER_SIZE) 
 		return;
@@ -663,5 +677,15 @@ static void cfm_radio_class_init(CFmRadioClass *klass)
 CFmRadio* cfm_radio_new()
 {
 	return g_object_new(CFM_TYPE_RADIO, NULL);
+}
+
+void cfm_radio_seek_up(CFmRadio* radio)
+{
+	cfm_radio_tuner_hw_seek(radio, TRUE);
+}
+
+void cfm_radio_seek_down(CFmRadio* radio)
+{
+	cfm_radio_tuner_hw_seek(radio, FALSE);
 }
 

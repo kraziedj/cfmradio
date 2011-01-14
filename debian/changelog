@@ -1,3 +1,9 @@
+cfmradio (0.2) unstable; urgency=low
+
+  * Implementing presets. 
+
+ -- Javier S. Pedro <maemo@javispedro.com>  Fri, 14 Jan 2011 21:02:04 +0100
+
 cfmradio (0.1) unstable; urgency=low
 
   * Initial Release.

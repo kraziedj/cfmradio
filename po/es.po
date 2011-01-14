@@ -1,0 +1,47 @@
+# Spanish translations for CFmRadio package
+# Traducciones al español para el paquete CFmRadio.
+# Copyright (C) 2011 THE CFmRadio'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the CFmRadio package.
+# Javier <javispedro@gmail.com>, 2011.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: CFmRadio\n"
+"Report-Msgid-Bugs-To: maemo@javispedro.com\n"
+"POT-Creation-Date: 2011-01-14 20:52+0100\n"
+"PO-Revision-Date: 2011-01-14 20:40+0100\n"
+"Last-Translator: Javier <maemo@javispedro.com>\n"
+"Language-Team: Spanish\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Language: es\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: cfmradio.c:248
+msgid "Radio"
+msgstr "Radio"
+
+#: cfmradio.c:255
+msgid "Presets…"
+msgstr "Emisoras…"
+
+#: cfmradio.c:259
+msgid "Scan for presets"
+msgstr "Buscar emisoras"
+
+#: cfmradio.c:263
+msgid "Stop scanning"
+msgstr "Detener búsqueda"
+
+#: cfmradio.c:267
+msgid "Set preset"
+msgstr "Añadir emisora"
+
+#: cfmradio.c:271
+msgid "Remove preset"
+msgstr "Quitar emisora"
+
+#: preset_list.c:112
+msgid "Presets"
+msgstr "Emisoras"
