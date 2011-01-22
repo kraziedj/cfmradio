@@ -20,6 +20,7 @@
 #include <pulse/xmalloc.h>
 
 #include "radio.h"
+#include "radio_routing.h"
 #include "types.h"
 #include "n900-fmrx-enabler.h"
 #include "rds.h"
@@ -225,8 +226,8 @@ static void cfm_radio_init_tuner(CFmRadio *self, const gchar * device)
 	                        TRUE : FALSE;
 
 	if (priv->precise_tuner) {
-		priv->range_low = tuner.rangelow * 62.5f;
-		priv->range_high = tuner.rangehigh * 62.5f;
+		priv->range_low = tuner.rangelow * 62.5;
+		priv->range_high = tuner.rangehigh * 62.5;
 	} else {
 		priv->range_low = tuner.rangelow * 62500;
 		priv->range_high = tuner.rangehigh * 62500;
@@ -456,7 +457,7 @@ static void cfm_radio_set_frequency(CFmRadio *self, gulong freq)
 	g_return_if_fail(priv->fd != -1);
 	t_freq.tuner = 0;
 	t_freq.type = V4L2_TUNER_RADIO;
-	t_freq.frequency = priv->precise_tuner ? freq / 62.5f : freq / 62500;
+	t_freq.frequency = priv->precise_tuner ? freq / 62.5 : freq / 62500;
 	int res = ioctl(priv->fd, VIDIOC_S_FREQUENCY, &t_freq);
 	g_warn_if_fail(res == 0);
 }
@@ -469,7 +470,7 @@ static gulong cfm_radio_get_frequency(CFmRadio *self)
 	t_freq.tuner = 0;
 	int res = ioctl(priv->fd, VIDIOC_G_FREQUENCY, &t_freq);
 	g_return_val_if_fail(res == 0, 0);
-	return priv->precise_tuner ? t_freq.frequency * 62.5f : t_freq.frequency * 62500;
+	return priv->precise_tuner ? t_freq.frequency * 62.5 : t_freq.frequency * 62500;
 }
 
 static guint cfm_radio_get_signal(CFmRadio *self)

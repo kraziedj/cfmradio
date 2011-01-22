@@ -2,8 +2,8 @@
  * GPL 2
  */
 
-#ifndef __CFM_RADIO_H__
-#define __CFM_RADIO_H__
+#ifndef CFM_RADIO_H
+#define CFM_RADIO_H
 
 #include <glib-object.h>
 
@@ -29,11 +29,11 @@ struct _CFmRadioClass
   GObjectClass parent_class;
 };
 
-GType cfm_radio_get_type (void);
+GType cfm_radio_get_type(void) G_GNUC_CONST;
 CFmRadio* cfm_radio_new();
 
 void cfm_radio_seek_up(CFmRadio* radio);
 void cfm_radio_seek_down(CFmRadio* radio);
 
-#endif /* __CFM_RADIO_H__ */
+#endif /* CFM_RADIO_H */
 

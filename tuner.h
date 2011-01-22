@@ -29,7 +29,7 @@ struct _CFmTunerClass
 	GtkDrawingAreaClass parent;
 };
 
-GType cfm_tuner_get_type (void);
+GType cfm_tuner_get_type(void) G_GNUC_CONST;
 CFmTuner* cfm_tuner_new();
 
 #endif /* __CFM_TUNER_H__ */

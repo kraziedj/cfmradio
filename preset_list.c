@@ -20,6 +20,7 @@ struct _CFmPresetListPrivate {
 	HildonTouchSelector *sel;
 	HildonTouchSelectorColumn *col;
 	GtkCellRenderer *renderer;
+	gint munge_selected_signal;
 };
 
 enum {
@@ -31,6 +32,7 @@ enum {
 
 enum {
 	SIGNAL_0,
+	SIGNAL_PRESET_SELECTED,
 	SIGNAL_LAST
 };
 
@@ -41,8 +43,18 @@ static void cfm_preset_list_selection_changed(HildonTouchSelector *selector,
 	gint column, gpointer user_data)
 {
 	CFmPresetList *self = CFM_PRESET_LIST(user_data);
+	CFmPresetListPrivate *priv = self->priv;
 
 	g_object_notify(G_OBJECT(self), "frequency");
+
+	if (priv->munge_selected_signal) {
+		return;
+	}
+	if (!GTK_WIDGET_VISIBLE(GTK_WIDGET(self))) {
+		return;
+	}
+
+	g_signal_emit(G_OBJECT(self), signals[SIGNAL_PRESET_SELECTED], 0, NULL);
 }
 
 static void cfm_preset_list_set_property(GObject *object, guint property_id,
@@ -53,6 +65,23 @@ static void cfm_preset_list_set_property(GObject *object, guint property_id,
 	switch (property_id) {
 	case PROP_MODEL:
 		hildon_touch_selector_set_model(priv->sel, 0, g_value_get_object(value));
+		break;
+	case PROP_FREQUENCY: {
+		GtkTreeModel *model = hildon_touch_selector_get_model(priv->sel, 0);
+		GtkTreeIter iter;
+		gulong sel_freq = g_value_get_ulong(value);
+		if (!gtk_tree_model_get_iter_first(model, &iter)) return;
+		do {
+			gulong freq;
+			gtk_tree_model_get(model, &iter, 0, &freq, -1);
+			if (sel_freq == freq) {
+				priv->munge_selected_signal++;
+				hildon_touch_selector_select_iter(priv->sel, 0, &iter, FALSE);
+				priv->munge_selected_signal--;
+				return;
+			}
+		} while (gtk_tree_model_iter_next(model, &iter));
+		}
 		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
@@ -117,7 +146,7 @@ static void cfm_preset_list_init(CFmPresetList *self)
 	priv->renderer = cfm_preset_renderer_new();
 	g_object_set(G_OBJECT(priv->renderer), "xpad", HILDON_MARGIN_DEFAULT, NULL);
 	priv->col = hildon_touch_selector_append_column(priv->sel, model,
-		priv->renderer, "frequency", 0, "name", 1);
+		priv->renderer, "frequency", 0, "name", 1, NULL);
 	hildon_touch_selector_column_set_text_column(priv->col, 0);
 
 	gtk_container_add(GTK_CONTAINER(self), GTK_WIDGET(priv->sel));
@@ -154,6 +183,10 @@ static void cfm_preset_list_class_init(CFmPresetListClass *klass)
 	                                G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 	properties[PROP_FREQUENCY] = param_spec;
 	g_object_class_install_property(gobject_class, PROP_FREQUENCY, param_spec);
+
+	signals[SIGNAL_PRESET_SELECTED] = g_signal_new("preset-selected",
+		G_TYPE_FROM_CLASS(klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+		g_cclosure_marshal_VOID__VOID, G_TYPE_NONE, 0);
 }
 
 CFmPresetList* cfm_preset_list_new()
@@ -161,10 +194,13 @@ CFmPresetList* cfm_preset_list_new()
 	return g_object_new(CFM_TYPE_PRESET_LIST, NULL);
 }
 
-void cfm_preset_list_show_for(CFmPresetList *self, CFmPresets *presets)
+void cfm_preset_list_show(CFmPresetList *self)
 {
-	g_object_set(self, "model", cfm_presets_get_all(presets), NULL);
-
 	gtk_widget_show_all(GTK_WIDGET(self));
+}
+
+void cfm_preset_list_hide(CFmPresetList *self)
+{
+	gtk_widget_hide(GTK_WIDGET(self));
 }
 

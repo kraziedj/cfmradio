@@ -30,16 +30,14 @@ struct _CFmPresetsClass
 	GObjectClass parent_class;
 };
 
-GType cfm_presets_get_type(void);
+GType cfm_presets_get_type(void) G_GNUC_CONST;
 CFmPresets* cfm_presets_get_default();
 CFmPresets* cfm_presets_get_for_name(const gchar *name);
 
 void cfm_presets_set_preset(CFmPresets *self, gulong freq, const gchar *name);
 void cfm_presets_remove_preset(CFmPresets *self, gulong freq);
 gboolean cfm_presets_is_preset(CFmPresets *self, gulong freq);
-const gchar * cfm_presets_get_preset(CFmPresets *self, gulong freq);
-
-GtkListStore* cfm_presets_get_all(CFmPresets *self);
+gchar* cfm_presets_get_preset(CFmPresets *self, gulong freq);
 
 #endif /* __CFM_PRESETS_H__ */
 

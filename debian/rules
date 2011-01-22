@@ -10,12 +10,16 @@
 #export DH_VERBOSE=1
 
 CFLAGS = -Wall -g
+LDFLAGS = -Wl,--as-needed
 
 ifneq (,$(findstring noopt,$(DEB_BUILD_OPTIONS)))
 	CFLAGS += -O0
 else
 	CFLAGS += -Os
 endif
+
+export CFLAGS
+export LDFLAGS
 
 build: build-stamp
 

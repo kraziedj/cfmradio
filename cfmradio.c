@@ -8,6 +8,9 @@
 #include "tuner.h"
 #include "types.h"
 
+// TODO
+#include "radio_routing.h"
+
 #define SCAN_LOCK_TIME	1
 #define SCAN_INCREMENT	100000
 
@@ -32,6 +35,9 @@ static guint rds_timer;
 static guint scan_timer;
 static gulong scan_prev_freq, scan_max;
 
+/* The only symbol externally visible (for maemo-launcher). */
+int main(int argc, char *argv[]) __attribute__((visibility("default")));
+
 static void cancel_scan();
 
 static void print_freq(gulong freq)
@@ -50,7 +56,7 @@ static void print_rds()
 	gulong freq;
 	gchar *rds_ps, *rds_rt;
 	gchar *markup;
-	const gchar *preset;
+	gchar *preset;
 
 	g_object_get(G_OBJECT(radio), "frequency", &freq, "rds-ps", &rds_ps,
 		"rds-rt", &rds_rt, NULL);
@@ -60,13 +66,15 @@ static void print_rds()
 	gtk_label_set_markup(ps_label, markup);
 	g_free(markup);
 
-
 	gtk_label_set_text(rt_label, g_strstrip(rds_rt));
 
 	preset = cfm_presets_get_preset(presets, freq);
-	if (preset && preset[0] == '\0') {
-		/* If the preset exists but has no name, give it one. */
-		cfm_presets_set_preset(presets, freq, rds_ps);
+	if (preset) {
+		if (strlen(preset) == 0 && strlen(rds_ps) > 1) {
+			/* If the preset exists but has no name, give it one. */
+			cfm_presets_set_preset(presets, freq, rds_ps);
+		}
+		g_free(preset);
 	}
 
 	g_free(rds_ps);
@@ -142,7 +150,10 @@ static gboolean rds_timer_cb(gpointer data)
 
 static void presets_clicked(GtkButton *button, gpointer user_data)
 {
-	cfm_preset_list_show_for(preset_list, presets);
+	gulong freq;
+	g_object_get(G_OBJECT(radio), "frequency", &freq, NULL);
+	g_object_set(G_OBJECT(preset_list), "frequency", freq, NULL);
+	cfm_preset_list_show(preset_list);
 }
 
 static void preset_frequency_cb(GObject *object, GParamSpec *psec, gpointer user_data)
@@ -151,7 +162,7 @@ static void preset_frequency_cb(GObject *object, GParamSpec *psec, gpointer user
 	cancel_scan();
 	g_object_get(G_OBJECT(preset_list), "frequency", &freq, NULL);
 	g_object_set(G_OBJECT(radio), "frequency", freq, NULL);
-	gtk_widget_hide(GTK_WIDGET(preset_list));
+	cfm_preset_list_hide(preset_list);
 	print_freq(freq);
 }
 
@@ -191,13 +202,13 @@ static gboolean scan_step(gpointer data)
 	guint signal;
 	g_object_get(G_OBJECT(radio), "frequency", &freq, "signal", &signal, NULL);
 
-	g_print("Autoscan %f Mhz: %f %%\n", freq / 1000000.0f, signal / 655.36f),
+	g_debug("Autoscan %.2f MHz: %.0f %%", freq / 1000000.0f, signal / 655.36f),
 	g_object_set(G_OBJECT(tuner), "frequency", freq, NULL);
 	print_freq(freq);
 
 	if (signal > (65536 / 3)) {
 		/* Signal > 33% : Create / Update preset */
-		/* TODO: Rounding */
+		g_debug(" -> Found station at %lu Hz", freq);
 		if (!cfm_presets_is_preset(presets, freq)) {
 			cfm_presets_set_preset(presets, freq, "");
 		}
@@ -248,6 +259,27 @@ static void cancel_scan(void)
 	end_scan();
 }
 
+static void speaker_clicked(void)
+{
+	cfm_radio_route_audio_to_speakers();
+}
+
+static void bypass_clicked(void)
+{
+	g_object_set(G_OBJECT(radio), "output", CFM_RADIO_OUTPUT_MUTE, NULL);
+usleep(1000);
+	cfm_radio_route_audio_to_headphones();
+usleep(1000);
+	cfm_radio_route_audio_bypass();
+}
+
+static void reset_clicked(void)
+{
+	cfm_radio_route_audio_reset();
+usleep(1000);
+	g_object_set(G_OBJECT(radio), "output", CFM_RADIO_OUTPUT_SYSTEM, NULL);
+}
+
 static void build_main_window()
 {
 	GtkBox *box;
@@ -280,6 +312,21 @@ static void build_main_window()
 	g_signal_connect_after(G_OBJECT(menu_button), "clicked",
 		G_CALLBACK(remove_preset_clicked), NULL);
 	hildon_app_menu_append(menu, GTK_BUTTON(menu_button));
+
+#if ADV_AUDIO_ROUTING
+	menu_button = gtk_button_new_with_label("Speaker output");
+	g_signal_connect_after(G_OBJECT(menu_button), "clicked",
+		G_CALLBACK(speaker_clicked), NULL);
+	hildon_app_menu_append(menu, GTK_BUTTON(menu_button));
+	menu_button = gtk_button_new_with_label("Analog bypass");
+	g_signal_connect_after(G_OBJECT(menu_button), "clicked",
+		G_CALLBACK(bypass_clicked), NULL);
+	hildon_app_menu_append(menu, GTK_BUTTON(menu_button));
+	menu_button = gtk_button_new_with_label("Reset audio to HP");
+	g_signal_connect_after(G_OBJECT(menu_button), "clicked",
+		G_CALLBACK(reset_clicked), NULL);
+	hildon_app_menu_append(menu, GTK_BUTTON(menu_button));
+#endif
 
 	gtk_widget_show_all(GTK_WIDGET(menu));
 	gtk_widget_hide(GTK_WIDGET(stop_scan_button));
@@ -370,10 +417,14 @@ int main(int argc, char *argv[])
 	gtk_widget_show_all(GTK_WIDGET(main_window));
 
 	preset_list = cfm_preset_list_new();
-	g_signal_connect(G_OBJECT(preset_list), "delete-event", 
+	GtkTreeModel *model;
+	g_object_get(G_OBJECT(presets), "model", &model, NULL);
+	g_object_set(G_OBJECT(preset_list), "model", model, NULL);
+	g_signal_connect(G_OBJECT(preset_list), "delete-event",
 	                 G_CALLBACK(gtk_widget_hide_on_delete), NULL);
-	g_signal_connect(G_OBJECT(preset_list), "notify::frequency", 
+	g_signal_connect(G_OBJECT(preset_list), "preset-selected",
 	                 G_CALLBACK(preset_frequency_cb), NULL);
+	g_object_unref(model);
 
 	g_object_set(G_OBJECT(radio), "output", CFM_RADIO_OUTPUT_SYSTEM, NULL);
 

@@ -20,67 +20,82 @@ struct _CFmPresetsPrivate {
 	gchar *name;
 	gchar *gconf_dir;
 	guint gconf_notify;
+	GtkListStore *l;
 	GHashTable *t;
+};
+
+enum {
+	COL_INVALID = -1,
+	COL_FREQUENCY = 0,
+	COL_NAME
 };
 
 enum {
 	PROP_0,
 	PROP_NAME,
+	PROP_MODEL,
 	PROP_LAST
 };
 
-enum {
-	SIGNAL_0,
-	SIGNAL_LAST
-};
-
 static GParamSpec *properties[PROP_LAST];
-static guint signals[SIGNAL_LAST];
 
-static inline gfloat freq_to_float(gulong f)
+static inline gulong round_freq(gulong freq)
 {
-	return f / 1000000.0;
+	const gulong round_to = 100000; /* 0.1 MHz */
+	return ((freq + round_to / 2) / round_to) * round_to;
 }
 
-static inline gulong float_to_freq(gfloat f)
+static inline gulong ffreq_to_freq(gfloat ffreq)
 {
-	return f * 1000000.0;
+	return round_freq(ffreq * 1000000.0f);
 }
 
-static inline gfloat pointer_to_float(gpointer p)
+static inline gfloat freq_to_ffreq(gulong freq)
 {
-	union {
-		gfloat f;
-		gpointer p;
-	} u;
-	u.p = p;
-	return u.f;
+	return freq / 1000000.0f;
 }
 
-static inline gpointer float_to_pointer(gfloat f)
+static inline gpointer freq_to_pointer(gulong freq)
 {
-	union {
-		gfloat f;
-		gpointer p;
-	} u;
-	u.f = f;
-	return u.p;
+	return GUINT_TO_POINTER(freq);
 }
 
-static inline gpointer freq_to_pointer(gulong f)
+static inline gulong pointer_to_freq(gpointer ptr)
 {
-	return float_to_pointer(freq_to_float(f));
+	return GPOINTER_TO_UINT(ptr);
 }
 
-static inline gulong pointer_to_freq(gpointer p)
+static inline gpointer ffreq_to_pointer(gfloat ffreq)
 {
-	return float_to_freq(pointer_to_float(p));
+	return freq_to_pointer(ffreq_to_freq(ffreq));
+}
+
+static inline gfloat pointer_to_ffreq(gpointer ptr)
+{
+	return freq_to_ffreq(pointer_to_freq(ptr));
+}
+
+static void destroy_iter(gpointer data)
+{
+	g_slice_free(GtkTreeIter, data);
 }
 
 static void func_gconf_entry_free(gpointer data, gpointer user_data)
 {
 	GConfEntry *entry = (GConfEntry*) data;
 	gconf_entry_free(entry);
+}
+
+static gint compare_freq(GtkTreeModel *model, GtkTreeIter *a, GtkTreeIter *b,
+	gpointer user_data)
+{
+	gulong freq_a, freq_b;
+	gtk_tree_model_get(model, a, 0, &freq_a, -1);
+	gtk_tree_model_get(model, b, 0, &freq_b, -1);
+
+	if (freq_a > freq_b) return 1;
+	else if (freq_a < freq_b) return -1;
+	else return 0;
 }
 
 static void cfm_presets_load(CFmPresets *self)
@@ -95,9 +110,16 @@ static void cfm_presets_load(CFmPresets *self)
 	for (i = l; i; i = g_slist_next(i)) {
 		GConfEntry *entry = (GConfEntry*) i->data;
 		const gchar *basename = g_basename(gconf_entry_get_key(entry));
-		gfloat freq = g_ascii_strtod(basename, NULL);
+		gfloat ffreq = g_ascii_strtod(basename, NULL);
+		gulong freq = ffreq_to_freq(ffreq);
 		const gchar *name = gconf_value_get_string(gconf_entry_get_value(entry));
-		g_hash_table_insert(priv->t, float_to_pointer(freq), g_strdup(name));
+		GtkTreeIter *iter = g_slice_new(GtkTreeIter);
+		gtk_list_store_insert_with_values(priv->l, iter, 0, 
+			COL_FREQUENCY, freq,
+			COL_NAME, name,
+			COL_INVALID
+			);
+		g_hash_table_insert(priv->t, freq_to_pointer(freq), iter);
 	}
 
 	g_slist_foreach(l, func_gconf_entry_free, NULL);
@@ -115,16 +137,37 @@ static void cfm_presets_gconf_notify(GConfClient *gconf, guint cnxn_id,
 	}
 
 	const gchar *basename = g_basename(gconf_entry_get_key(entry));
-	gfloat freq = g_ascii_strtod(basename, NULL);
+	gfloat ffreq = g_ascii_strtod(basename, NULL);
+	gulong freq = ffreq_to_freq(ffreq);
+	gpointer t_data = g_hash_table_lookup(priv->t, freq_to_pointer(freq));
 	GConfValue *value = gconf_entry_get_value(entry);
 
 	if (value) {
 		const gchar *name = gconf_value_get_string(gconf_entry_get_value(entry));
-		g_debug("Preset '%s' changed to '%s'\n", basename, name);
-		g_hash_table_insert(priv->t, float_to_pointer(freq), g_strdup(name));
+		if (t_data) {
+			/* Modifying existing preset's name */
+			GtkTreeIter *iter = (GtkTreeIter*)t_data;
+			g_debug("Preset '%s' changed to '%s'\n", basename, name);
+			gtk_list_store_set(priv->l, iter, COL_NAME, name, COL_INVALID);
+		} else {
+			GtkTreeIter *iter = g_slice_new(GtkTreeIter);
+			g_debug("Preset '%s' set to '%s'\n", basename, name);
+			gtk_list_store_insert_with_values(priv->l, iter, 0,
+				COL_FREQUENCY, freq,
+				COL_NAME, name,
+				COL_INVALID
+			);
+			g_hash_table_insert(priv->t, freq_to_pointer(freq), iter);
+		}
+		
 	} else {
-		g_debug("Preset '%s' removed\n", basename);
-		g_hash_table_remove(priv->t, float_to_pointer(freq));
+		
+		if (t_data) {
+			GtkTreeIter *iter = (GtkTreeIter*)t_data;
+			g_debug("Preset '%s' removed\n", basename);
+			gtk_list_store_remove(priv->l, iter);
+			g_hash_table_remove(priv->t, freq_to_pointer(freq));
+		}
 	}
 }
 
@@ -151,6 +194,9 @@ static void cfm_presets_get_property(GObject *object, guint property_id,
 	case PROP_NAME:
 		g_value_set_string(value, self->priv->name);
 		break;
+	case PROP_MODEL:
+		g_value_set_object(value, self->priv->l);
+		break;
 	default:
 		G_OBJECT_WARN_INVALID_PROPERTY_ID(object, property_id, pspec);
 		break;
@@ -164,7 +210,8 @@ static void cfm_presets_init(CFmPresets *self)
 	self->priv = priv = CFM_PRESETS_GET_PRIVATE(self);
 
 	priv->gconf = gconf_client_get_default();
-	priv->t = g_hash_table_new_full(g_direct_hash, g_direct_equal, NULL, g_free);
+	priv->t = g_hash_table_new_full(g_direct_hash, g_direct_equal,
+		NULL, destroy_iter);
 }
 
 static GObject * cfm_presets_constructor(GType gtype, guint n_properties,
@@ -181,6 +228,12 @@ static GObject * cfm_presets_constructor(GType gtype, guint n_properties,
 		NULL);
 	priv->gconf_notify = gconf_client_notify_add(priv->gconf, priv->gconf_dir,
 		cfm_presets_gconf_notify, self, NULL, NULL);
+
+	priv->l = gtk_list_store_new(2, G_TYPE_ULONG, G_TYPE_STRING);
+	gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(priv->l), 0, compare_freq,
+		NULL, NULL);
+	gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(priv->l), 0,
+		GTK_SORT_ASCENDING);
 
 	cfm_presets_load(self);
 
@@ -205,6 +258,10 @@ static void cfm_presets_dispose(GObject *object)
 	if (priv->gconf) {
 		g_object_unref(priv->gconf);
 		priv->gconf = NULL;
+	}
+	if (priv->l) {
+		g_object_unref(priv->l);
+		priv->l = NULL;
 	}
 }
 
@@ -238,6 +295,13 @@ static void cfm_presets_class_init(CFmPresetsClass *klass)
 	                                 G_PARAM_STATIC_STRINGS);
 	properties[PROP_NAME] = param_spec;
 	g_object_class_install_property(gobject_class, PROP_NAME, param_spec);
+	param_spec = g_param_spec_object("model",
+	                                 "Preset list model",
+	                                 "A model containing this set of presets",
+	                                 GTK_TYPE_TREE_MODEL,
+	                                 G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+	properties[PROP_MODEL] = param_spec;
+	g_object_class_install_property(gobject_class, PROP_MODEL, param_spec);
 }
 
 static gpointer cfm_presets_build_default(gpointer data)
@@ -264,7 +328,7 @@ void cfm_presets_set_preset(CFmPresets *self, gulong freq, const gchar *name)
 	GError *error = NULL;
 	gchar buf[G_ASCII_DTOSTR_BUF_SIZE];
 	gchar *key = g_strdup_printf("%s/%s", priv->gconf_dir,
-		g_ascii_formatd(buf, sizeof(buf), "%.1f", freq_to_float(freq)));
+		g_ascii_formatd(buf, sizeof(buf), "%.1f", freq_to_ffreq(freq)));
 	if (!gconf_client_set_string(priv->gconf, key, name, &error)) {
 		g_warning("Failed to store preset '%s' ('%s'): %s\n", key, name,
 			error->message);
@@ -278,7 +342,7 @@ void cfm_presets_remove_preset(CFmPresets *self, gulong freq)
 	GError *error = NULL;
 	gchar buf[G_ASCII_DTOSTR_BUF_SIZE];
 	gchar *key = g_strdup_printf("%s/%s", priv->gconf_dir,
-		g_ascii_formatd(buf, sizeof(buf), "%.1f", freq_to_float(freq)));
+		g_ascii_formatd(buf, sizeof(buf), "%.1f", freq_to_ffreq(freq)));
 	if (!gconf_client_unset(priv->gconf, key, &error)) {
 		g_warning("Failed to remove preset '%s': %s\n", key, error->message);
 	}
@@ -292,52 +356,21 @@ gboolean cfm_presets_is_preset(CFmPresets *self, gulong freq)
 	return g_hash_table_lookup(priv->t, freq_to_pointer(freq)) ? TRUE : FALSE;
 }
 
-const gchar * cfm_presets_get_preset(CFmPresets *self, gulong freq)
+gchar * cfm_presets_get_preset(CFmPresets *self, gulong freq)
 {
 	CFmPresetsPrivate *priv = self->priv;
 
-	gpointer found = g_hash_table_lookup(priv->t, freq_to_pointer(freq));
-	if (found) {
-		return (const gchar *) found;
+	gpointer t_data = g_hash_table_lookup(priv->t, freq_to_pointer(freq));
+	if (t_data) {
+		GtkTreeIter *iter = (GtkTreeIter*) t_data;
+		gchar *name;
+		gtk_tree_model_get(GTK_TREE_MODEL(priv->l), iter,
+			COL_NAME, &name, COL_INVALID);
+		return name;
 	} else {
 		return NULL;
 	}
 
 	return NULL;
-}
-
-static void preset_to_list_store(gpointer key, gpointer value, gpointer user_data)
-{
-	GtkListStore *l = GTK_LIST_STORE(user_data);
-	GtkTreeIter iter;
-
-	gulong freq = pointer_to_freq(key);
-	gtk_list_store_insert_with_values(l, &iter, 0, 0, freq, 1, value, -1);
-}
-
-static gint compare_freq(GtkTreeModel *model, GtkTreeIter *a, GtkTreeIter *b,
-	gpointer user_data)
-{
-	gulong freq_a, freq_b;
-	gtk_tree_model_get(model, a, 0, &freq_a, -1);
-	gtk_tree_model_get(model, b, 0, &freq_b, -1);
-
-	if (freq_a > freq_b) return 1;
-	else if (freq_a < freq_b) return -1;
-	else return 0;
-}
-
-GtkListStore* cfm_presets_get_all(CFmPresets *self)
-{
-	CFmPresetsPrivate *priv = self->priv;
-	GtkListStore *l = gtk_list_store_new(2, G_TYPE_ULONG, G_TYPE_STRING);
-	g_hash_table_foreach(priv->t, preset_to_list_store, l);
-
-	gtk_tree_sortable_set_sort_func(GTK_TREE_SORTABLE(l), 0, compare_freq,
-		NULL, NULL);
-	gtk_tree_sortable_set_sort_column_id(GTK_TREE_SORTABLE(l), 0,
-		GTK_SORT_ASCENDING);
-
-	return l;
 }
 

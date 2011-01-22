@@ -1,4 +1,4 @@
-CFLAGS?=-Os -g -Wall
+CFLAGS?=-O0 -g -Wall
 LDFLAGS?=-Wl,--as-needed
 
 LOCALEDIR?=/usr/share/locale
@@ -8,11 +8,11 @@ GETTEXT_CFLAGS:=-DGETTEXT_PACKAGE=\"$(GETTEXT_PACKAGE)\" -DLOCALEDIR=\"$(LOCALED
 PKGCONFIG_PKGS:=libosso hildon-1 alsa libpulse-mainloop-glib dbus-glib-1 gconf-2.0
 PKGCONFIG_CFLAGS:=$(shell pkg-config $(PKGCONFIG_PKGS) --cflags)
 PKGCONFIG_LIBS:=$(shell pkg-config $(PKGCONFIG_PKGS) --libs)
-LAUNCHER_CFLAGS:=$(shell pkg-config maemo-launcher-app --cflags)
+LAUNCHER_CFLAGS:=$(shell pkg-config maemo-launcher-app --cflags) -fvisibility=hidden
 LAUNCHER_LDFLAGS:=$(shell pkg-config maemo-launcher-app --libs)
 MISC_CFLAGS:=-std=gnu99 -DG_LOG_DOMAIN=\"CFmRadio\"
 
-SRCS:=cfmradio.c radio.c types.c tuner.c rds.c \
+SRCS:=cfmradio.c radio.c radio_routing.c types.c tuner.c rds.c \
 	presets.c preset_list.c preset_renderer.c
 OBJS:=$(SRCS:.c=.o)
 POT:=po/$(GETTEXT_PACKAGE).pot

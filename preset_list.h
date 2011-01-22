@@ -30,8 +30,10 @@ struct _CFmPresetListClass
 	HildonStackableWindowClass parent;
 };
 
-GType cfm_preset_list_get_type (void);
+GType cfm_preset_list_get_type(void) G_GNUC_CONST;
 CFmPresetList* cfm_preset_list_new();
-void cfm_preset_list_show_for(CFmPresetList *self, CFmPresets *presets);
+
+void cfm_preset_list_show(CFmPresetList *self);
+void cfm_preset_list_hide(CFmPresetList *self);
 
 #endif /* _CFM_PRESET_LIST_H_ */
