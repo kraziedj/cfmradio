@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: CFmRadio\n"
 "Report-Msgid-Bugs-To: maemo@javispedro.com\n"
-"POT-Creation-Date: 2011-01-22 03:25+0100\n"
+"POT-Creation-Date: 2011-01-28 20:26+0100\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,26 +20,26 @@ msgstr ""
 msgid "Radio"
 msgstr ""
 
-#: cfmradio.c:295
+#: cfmradio.c:296
 msgid "Presets…"
 msgstr ""
 
-#: cfmradio.c:299
+#: cfmradio.c:300
 msgid "Scan for presets"
 msgstr ""
 
-#: cfmradio.c:303
+#: cfmradio.c:304
 msgid "Stop scanning"
 msgstr ""
 
-#: cfmradio.c:307
+#: cfmradio.c:308
 msgid "Set preset"
 msgstr ""
 
-#: cfmradio.c:311
+#: cfmradio.c:312
 msgid "Remove preset"
 msgstr ""
 
-#: preset_list.c:138
+#: preset_list.c:141
 msgid "Presets"
 msgstr ""
