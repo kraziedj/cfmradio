@@ -1,3 +1,9 @@
+cfmradio (0.3.3) unstable; urgency=low
+
+  * Adding bugtracker link.
+
+ -- Javier S. Pedro <maemo@javispedro.com>  Fri, 28 Jan 2011 20:09:32 +0100
+
 cfmradio (0.3.2) unstable; urgency=low
 
   * Playing with making presets a GtkTreeModel. 
