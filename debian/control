@@ -4,6 +4,7 @@ Priority: extra
 Maintainer: Javier S. Pedro <maemo@javispedro.com>
 Build-Depends: debhelper (>= 5), libosso-dev, libhildon1-dev, libasound2-dev,
  libpulse-dev, maemo-launcher-dev
+XSBC-Bugtracker: http://github.com/javispedro/cfmradio/issues
 Standards-Version: 3.7.2
 
 Package: cfmradio
@@ -14,8 +15,7 @@ Description: FM radio player
 XB-Description-es_ES: Reproductor de radio FM
  Un reproductor de radio FM escrito en C usando Hildon con una interfaz
  minimalista.
-XSBC-Maemo-Display-Name: C FM Radio
-XSBC-Bugtracker: https://github.com/javispedro/cfmradio/issues
+XB-Maemo-Display-Name: C FM Radio
 XB-Maemo-Icon-26:
  iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAAAXNSR0IArs4c6QAA
  AAZiS0dEAP8A/wD/oL2nkwAAAAlwSFlzAAALEwAACxMBAJqcGAAAAAd0SU1FB9oK

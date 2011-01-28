@@ -1,3 +1,9 @@
+cfmradio (0.3.4) unstable; urgency=low
+
+  * Trying to fix control file.
+
+ -- Javier S. Pedro <maemo@javispedro.com>  Fri, 28 Jan 2011 21:17:51 +0100
+
 cfmradio (0.3.3) unstable; urgency=low
 
   * Adding bugtracker link.
