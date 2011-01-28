@@ -8,7 +8,7 @@
 #include "tuner.h"
 #include "types.h"
 
-// TODO
+// TODO: ADV_AUDIO_ROUTING
 #include "radio_routing.h"
 
 #define SCAN_LOCK_TIME	1
@@ -288,6 +288,7 @@ static void build_main_window()
 	gtk_window_set_title(GTK_WINDOW(main_window), _("Radio"));
 	hildon_gtk_window_set_portrait_flags(GTK_WINDOW(main_window),
 		HILDON_PORTRAIT_MODE_SUPPORT);
+	gtk_widget_set_name(GTK_WIDGET(main_window), "cfmradio-main-window");
 
 	HildonAppMenu *menu = HILDON_APP_MENU(hildon_app_menu_new());
 

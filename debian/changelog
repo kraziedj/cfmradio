@@ -1,8 +1,10 @@
 cfmradio (0.3.3) unstable; urgency=low
 
   * Adding bugtracker link.
+  * Name the main window as "cfmradio-main-window" to ease rc file
+    development.
 
- -- Javier S. Pedro <maemo@javispedro.com>  Fri, 28 Jan 2011 20:09:32 +0100
+ -- Javier S. Pedro <maemo@javispedro.com>  Fri, 28 Jan 2011 20:25:16 +0100
 
 cfmradio (0.3.2) unstable; urgency=low
 
